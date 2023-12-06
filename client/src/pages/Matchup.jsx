@@ -1,63 +1,85 @@
-import { useQuery, useMutation } from '@apollo/client';
-import { useParams, Link } from 'react-router-dom';
-import { CREATE_VOTE } from '../utils/mutations';
-import { QUERY_MATCHUPS } from '../utils/queries';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useMutation, useQuery } from '@apollo/client';
+import { QUERY_TECH } from '../utils/queries';
+import { CREATE_MATCHUP } from '../utils/mutations';
 
-const Vote = () => {
-  let { id } = useParams();
+const Matchup = () => {
+  const { loading, data } = useQuery(QUERY_TECH);
 
-  const { loading, data } = useQuery(QUERY_MATCHUPS, {
-    variables: { _id: id },
+  const techList = data?.tech || [];
+
+  const [formData, setFormData] = useState({
+    tech1: 'JavaScript',
+    tech2: 'JavaScript',
   });
+  let navigate = useNavigate();
 
-  const matchup = data?.matchups || [];
+  const [createMatchup, { error }] = useMutation(CREATE_MATCHUP);
 
-  const [createVote, { error }] = useMutation(CREATE_VOTE);
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setFormData({ ...formData, [name]: value });
+  };
 
-  const handleVote = async (techNum) => {
+  const handleFormSubmit = async (event) => {
+    event.preventDefault();
+
     try {
-      await createVote({
-        variables: { _id: id, techNum: techNum },
+      const { data } = await createMatchup({
+        variables: { ...formData },
       });
+
+      navigate(`/matchup/${data.createMatchup._id}`);
     } catch (err) {
       console.error(err);
     }
+
+    setFormData({
+      tech1: 'JavaScript',
+      tech2: 'JavaScript',
+    });
   };
 
   return (
-    <div className="card bg-white card-rounded w-50">
+    <div className="card bg-white card-rounded w-25">
       <div className="card-header bg-dark text-center">
-        <h1>Here is the matchup!</h1>
+        <h1>Let's create a matchup!</h1>
       </div>
-      {loading ? (
-        <div>Loading...</div>
-      ) : (
-        <div className="card-body text-center mt-3">
-          <h2>
-            {matchup[0].tech1} vs. {matchup[0].tech2}
-          </h2>
-          <h3>
-            {matchup[0].tech1_votes} : {matchup[0].tech2_votes}
-          </h3>
-          <button className="btn btn-info" onClick={() => handleVote(1)}>
-            Vote for {matchup[0].tech1}
-          </button>{' '}
-          <button className="btn btn-info" onClick={() => handleVote(2)}>
-            Vote for {matchup[0].tech2}
-          </button>
-          <div className="card-footer text-center m-3">
-            <br></br>
-            <Link to="/">
-              <button className="btn btn-lg btn-danger">
-                View all matchups
-              </button>
-            </Link>
-          </div>
-        </div>
-      )}
+      <div className="card-body m-5">
+        {loading ? (
+          <div>Loading...</div>
+        ) : (
+          <form onSubmit={handleFormSubmit}>
+            <label>Tech 1: </label>
+            <select name="tech1" onChange={handleInputChange}>
+              {techList.map((tech) => {
+                return (
+                  <option key={tech._id} value={tech.name}>
+                    {tech.name}
+                  </option>
+                );
+              })}
+            </select>
+            <label>Tech 2: </label>
+            <select name="tech2" onChange={handleInputChange}>
+              {techList.map((tech) => {
+                return (
+                  <option key={tech._id} value={tech.name}>
+                    {tech.name}
+                  </option>
+                );
+              })}
+            </select>
+            <button className="btn btn-danger" type="submit">
+              Create Matchup!
+            </button>
+          </form>
+        )}
+      </div>
       {error && <div>Something went wrong...</div>}
     </div>
   );
 };
 
-export default Vote;
+export default Matchup;

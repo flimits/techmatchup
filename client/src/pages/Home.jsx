@@ -13,7 +13,7 @@ const Home = () => {
     <div className="card bg-white card-rounded w-50">
       <div className="card-header bg-dark text-center">
         <h1>Welcome to Tech Matchup!</h1>
-      </div> 
+      </div>
       <div className="card-body m-5">
         <h2>Here is a list of matchups you can vote on:</h2>
         {loading ? (
